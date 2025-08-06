@@ -23,30 +23,31 @@ def Lexer(source_code):
     is_string_open=False
     for char in chars:
         statematent += char
-        if char == "\n":
-            tokens.append({ "type": "NEWLINE", "value": "\n" })
-            statematent = ""
-        elif char == '"':
-            if is_string_open == False:
+        match char:
+            case "\n":
+                tokens.append({ "type": "NEWLINE", "value": "\n" })
                 statematent = ""
-                is_string_open = True
-            else:
-                statematent = statematent[:-1]
-                tokens.append({ "type": "STRING", "value": statematent })
+            case '"':
+                if is_string_open == False:
+                    statematent = ""
+                    is_string_open = True
+                else:
+                    statematent = statematent[:-1]
+                    tokens.append({ "type": "STRING", "value": statematent })
+                    statematent = ""
+                    is_string_open = False
+                    
+            case "(":
+                open_parenthesis += 1
+                tokens.append({ "type": "LPAREN", "value": "(" })
                 statematent = ""
-                is_string_open = False
-                
-        elif char == "(":
-            open_parenthesis += 1
-            tokens.append({ "type": "LPAREN", "value": "(" })
-            statematent = ""
-        elif char == ")":
-            open_parenthesis -= 1
-            tokens.append({ "type": "RPAREN", "value": ")" })
-            statematent = ""
-        elif char == ";":
-            tokens.append({ "type": "SEMICOLON", "value": ";" })
-            statematent = ""
+            case ")":
+                open_parenthesis -= 1
+                tokens.append({ "type": "RPAREN", "value": ")" })
+                statematent = ""
+            case ";":
+                tokens.append({ "type": "SEMICOLON", "value": ";" })
+                statematent = ""
 
         if statematent == "print":
             tokens.append({ "type": "KEYWORD", "value": "print" })
@@ -83,13 +84,19 @@ def Parser(tokens):
             pass
         i+=1
     return Ast
-
+class CodeGenerator:
+    def generate(self, ast):
+        lines = []
+        for node in ast:
+            if isinstance(node, PrintNode):
+                lines.append(f'print("{node.value.value}")')
+        return "\n".join(lines)
 def main(file_path):
     source_code = read_file(file_path)
     tokens=Lexer(source_code)
-    Ast= Parser(tokens)
-    for node in Ast:
-        print(node.__str__())
+    ast= Parser(tokens)
+    code = CodeGenerator().generate(ast)
+    exec(code)
 arguments = sys.argv
 if len(arguments) > 1:
     main(arguments[1])
